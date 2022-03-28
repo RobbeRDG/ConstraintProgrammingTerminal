@@ -36,7 +36,7 @@ array[1..N] of var 0..168: shifted_departuretimes;
 %%%% Constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Birth window constraints OK
+%Birth window constraints
 constraint forall(i in 1..N) (
   arrivaltimes[i] <= shifted_arrivaltimes[i] 
   /\ 
@@ -47,7 +47,7 @@ constraint forall(i in 1..N) (
   shifted_departuretimes[i] <= (departuretimes[i] + s)
 );
 
-%Duration needs to be constant OK
+%Duration needs to be constant 
 constraint forall(i in 1..N) (
   if (shifted_departuretimes[i] - shifted_arrivaltimes[i] > 0)
   then
@@ -70,7 +70,7 @@ constraint forall(i in 1..N) (
   endif
 );
 
-%Vessel position + length cannot exceed quay length OK
+%Vessel position + length cannot exceed quay length 
 constraint forall(i in 1..N) (
   shipquaypositions[i] + lengths[i] <= L
 );
@@ -80,35 +80,42 @@ constraint forall(i in 1..N) (
 constraint forall(i in 1..N-1) (
   forall(j in i+1..N) (
     if 
-      shifted_arrivaltimes[j] <= shifted_arrivaltimes[i]
-      /\
-      shifted_arrivaltimes[i] <= shifted_departuretimes[j]
+     time_overlay(i,j)
     then
-     1 != quay_overlap(i,j)
+     quay_overlay(i,j) != 1
     endif
   )
 );
 
 %Helper function to check if 2 vessels have overlay on the quay
-predicate quay_overlap(var int:i, var int:j) = 
-  shipquaypositions[i] <= shipquaypositions[j] + lengths[j]
+predicate quay_overlay(var int:i, var int:j) = 
+  shipquaypositions[i] < shipquaypositions[j] + lengths[j]
   /\
-  shipquaypositions[i] + lengths[i] >= shipquaypositions[j];
+  shipquaypositions[i] + lengths[i] > shipquaypositions[j];
 
-%Helper function to calculate if 2 vessels are docked at the same time NOK
-% predicate time_overlap(var int: i, var int: j)=
-%   if(shifted_departuretimes[i] < shifted_arrivaltimes[i])
-%   then
-    
-%   endif;
+%Helper function to calculate if 2 vessels are docked at the same time 
+predicate time_overlay(var int: i, var int: j)=( 
+  if(shifted_departuretimes[i] > shifted_arrivaltimes[i] /\ shifted_departuretimes[j] > shifted_arrivaltimes[j])
+  then
+    shifted_arrivaltimes[i] < shifted_departuretimes[j] /\ shifted_departuretimes[i] > shifted_arrivaltimes[j]
+  elseif
+    shifted_departuretimes[i] > shifted_arrivaltimes[i] /\ shifted_departuretimes[j] < shifted_arrivaltimes[j]
+  then
+    shifted_arrivaltimes[i] < shifted_departuretimes[j] \/ shifted_departuretimes[i] > shifted_arrivaltimes[j]
+  elseif
+    shifted_departuretimes[i] < shifted_arrivaltimes[i] /\ shifted_departuretimes[j] > shifted_arrivaltimes[j]
+  then
+    shifted_arrivaltimes[i] > shifted_arrivaltimes[j] \/ shifted_departuretimes[i] < shifted_departuretimes[j]
+  else
+    true
+  endif
+  );
 
-%Cranes cannot be assigned to multiple ships at the same time NOK
+%Cranes cannot be assigned to multiple ships at the same time 
 constraint forall(i in 1..N-1) (
   forall(j in i+1..N) (
     if 
-      shifted_arrivaltimes[j] <= shifted_arrivaltimes[i]
-      /\
-      shifted_arrivaltimes[i] <= shifted_departuretimes[j]
+      time_overlay(i,j) == 1
     then
       forall(k in 1..C) (
           assignedcranes[i,k] != 1
@@ -123,9 +130,19 @@ constraint forall(i in 1..N-1) (
 constraint forall(i in 1..N)(
   sum(j in 1..C)(assignedcranes[i,j]) >= minimumnumqcs[i]
   );
-  
+ 
 %Quay crane needs to be able to reach the assigned vessel
-
+constraint forall(i in 1..N)(
+  forall(j in 1..C)(
+    if(assignedcranes[i,j] == 1)
+    then
+      shipquaypositions[i] + lengths[i] <= qcbasepositions[j] + r
+      /\
+      shipquaypositions[i] >= qcbasepositions[j]
+    endif
+  )
+);
+       
 solve satisfy;
 
 
