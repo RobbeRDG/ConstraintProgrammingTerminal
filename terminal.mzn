@@ -37,6 +37,7 @@ array[1..N] of var 0..168: shifted_departuretimes;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Birth window constraints
+%TODO Constraint uitbreiden met mogelijke switch zondag-maandag
 constraint forall(i in 1..N) (
   arrivaltimes[i] <= shifted_arrivaltimes[i] 
   /\ 
@@ -49,13 +50,13 @@ constraint forall(i in 1..N) (
 
 %Duration needs to be constant 
 constraint forall(i in 1..N) (
-  if (shifted_departuretimes[i] - shifted_arrivaltimes[i] > 0)
+  if (shifted_departuretimes[i] > shifted_arrivaltimes[i])
   then
     shifted_departuretimes[i] - shifted_arrivaltimes[i] 
     == 
     departuretimes[i] - arrivaltimes[i]
   else
-    if (departuretimes[i] - arrivaltimes[i] < 0)
+    if (departuretimes[i] < arrivaltimes[i])
     then
       shifted_departuretimes[i] - shifted_arrivaltimes[i] 
       == 
@@ -87,11 +88,14 @@ constraint forall(i in 1..N-1) (
   )
 );
 
-%Helper function to check if 2 vessels have overlay on the quay
+%Helper function to check if 2 vessels have overlay on the quay and respect the safety distance
 predicate quay_overlay(var int:i, var int:j) = 
   shipquaypositions[i] < shipquaypositions[j] + lengths[j]
   /\
-  shipquaypositions[i] + lengths[i] > shipquaypositions[j];
+  shipquaypositions[i] + lengths[i] > shipquaypositions[j]
+  /\
+  (shipquaypositions[i] + lengths[i] + d <= shipquaypositions[j]
+    \/ shipquaypositions[j] + lengths[j] + d <= shipquaypositions[i]);
 
 %Helper function to calculate if 2 vessels are docked at the same time 
 predicate time_overlay(var int: i, var int: j)=( 
@@ -144,5 +148,3 @@ constraint forall(i in 1..N)(
 );
        
 solve satisfy;
-
-
