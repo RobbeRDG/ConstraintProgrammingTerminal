@@ -81,19 +81,21 @@ constraint forall(i in 1..N) (
 constraint forall(i in 1..N-1) (
   forall(j in i+1..N) (
     if 
-     time_overlay(i,j)
+     time_overlay(i,j) == 1
     then
-     quay_overlay(i,j) != 1
+     quay_overlay(i,j) != 1 /\ check_safety_dist(i,j) == 1
     endif
   )
 );
 
-%Helper function to check if 2 vessels have overlay on the quay and respect the safety distance
+%Helper function to check if 2 vessels have overlay on the quay
 predicate quay_overlay(var int:i, var int:j) = 
   shipquaypositions[i] < shipquaypositions[j] + lengths[j]
   /\
-  shipquaypositions[i] + lengths[i] > shipquaypositions[j]
-  /\
+  shipquaypositions[i] + lengths[i] > shipquaypositions[j];
+    
+%Helper function to check if 2 vessels respect the safety distance
+predicate check_safety_dist(var int:i, var int:j) =
   (shipquaypositions[i] + lengths[i] + d <= shipquaypositions[j]
     \/ shipquaypositions[j] + lengths[j] + d <= shipquaypositions[i]);
 
@@ -148,3 +150,12 @@ constraint forall(i in 1..N)(
 );
        
 solve satisfy;
+
+output [
+        concat([show(n) ++ ":" 
+        ++ show(shipquaypositions[n]) ++ "-" ++ show(shipquaypositions[n]+lengths[n]) ++ ";"
+        ++ show(shifted_arrivaltimes[n]) ++ ".." ++ show(shifted_departuretimes[n]) ++ ";"
+        ++ concat([show(assignedcranes[n,c]*c) ++ "," | c in 1..C]) ++ "\n"
+        | n in 1..N])
+       ];
+        
