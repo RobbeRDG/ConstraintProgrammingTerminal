@@ -2,9 +2,9 @@
 %%%% Variables
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-int: N; %number of vessels
-int: L; %quay length
-int: s; %max shift time
+int: N; % number of vessels
+int: L; % quay length
+int: s; % max shift time
 int: d; % minimum safety distance
 int: C; % number of cranes
 int: r; % crane range
@@ -27,6 +27,8 @@ array[1..N] of var 0..L: shipquaypositions;
 
 %Crane assignments
 array[1..N,1..C] of var 0..1: assignedcranes;
+array[1..C] of var 0..1: test_array;
+
 
 %Shifted time windows
 array[1..N] of var 0..168: shifted_arrivaltimes;
@@ -148,14 +150,15 @@ constraint forall(i in 1..N)(
     endif
   )
 );
-       
+
+ 
 solve satisfy;
 
 output [
         concat([show(n) ++ ":" 
         ++ show(shipquaypositions[n]) ++ "-" ++ show(shipquaypositions[n]+lengths[n]) ++ ";"
         ++ show(shifted_arrivaltimes[n]) ++ ".." ++ show(shifted_departuretimes[n]) ++ ";"
-        ++ concat([show(assignedcranes[n,c]*c) ++ "," | c in 1..C]) ++ "\n"
+        ++ concat([show(assignedcranes[n,c]*c) ++ "," | c in 1..C where show(assignedcranes[n,c]) == show(1)]) ++ "\n"
         | n in 1..N])
        ];
         
