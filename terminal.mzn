@@ -9,6 +9,8 @@ int: d; % minimum safety distance
 int: C; % number of cranes
 int: r; % crane range
 
+array[1..2] of string: test_array = ["",","];
+
 %Quay basepositions of cranes
 array[1..C] of var 0..L: qcbasepositions;
 
@@ -37,7 +39,6 @@ array[1..N] of var 0..168: shifted_departuretimes;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Birth window constraints
-%TODO Constraint uitbreiden met mogelijke switch zondag-maandag
 constraint forall(i in 1..N) (
   arrivaltimes[i] <= shifted_arrivaltimes[i] 
   /\ 
