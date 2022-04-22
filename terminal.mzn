@@ -27,8 +27,6 @@ array[1..N] of var 0..L: shipquaypositions;
 
 %Crane assignments
 array[1..N,1..C] of var 0..1: assignedcranes;
-array[1..C] of var 0..1: test_array;
-
 
 %Shifted time windows
 array[1..N] of var 0..168: shifted_arrivaltimes;
